@@ -62,17 +62,6 @@ BUILDDIR=/tmp/makepkg makepkg -srci
 * **`[Config] BFQ is default I/O scheduler`**
 * **`[Config] MuQSS is default CPU scheduler`**
 
-### INCLUDED PATCHES DETAILS
-
-| NAME                                                        | REPOSITORY/CODE/HOMEPAGE                                                                         |                                                                               |
-|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| Con Kolivas Patchset                                        | [link](http://ck.kolivas.org/patches/4.0/4.9/4.9-ck1/patches/)                                   |
-| AUFS4 Support                                               | [link](http://aufs.sourceforge.net/)                                                             |
-| Reiser4 Support                                             | [link](https://reiser4.wiki.kernel.org/index.php/Main_Page)                                      |
-| exFAT Support                                               | [link](https://github.com/zen-kernel/zen-kernel/commits/4.9/master/fs/exfat)                     |
-| Native optimizations autodetected by GCC for CPU            | [link](https://github.com/graysky2/kernel_gcc_patch)                                             | 
-| ZEN: Add a CONFIG option that sets -O3                      | [link](https://github.com/zen-kernel/zen-kernel/commit/25d43549e39b1b3db0bc67096edf274c861a8e24) | 
-
 ## LICENSE
 
 [GPL2](https://www.gnu.org/licenses/gpl-2.0.txt)
