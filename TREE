@@ -1,0 +1,56 @@
+.
+├── CLEANUP
+├── LICENSE
+├── linux49
+│   ├── aufs4.9-20161219.patch
+│   ├── aufs4-base.patch
+│   ├── aufs4-kbuild.patch
+│   ├── aufs4-loopback.patch
+│   ├── aufs4-mmap.patch
+│   ├── aufs4-standalone.patch
+│   ├── change-default-console-loglevel.patch
+│   ├── ck-0001-Multiple-Queue-Skiplist-Scheduler-version-0.15.patch
+│   ├── ck-0002-Make-preemptible-kernel-default.patch
+│   ├── ck-0003-Expose-vmsplit-option-for-our-poor-32bit-users.patch
+│   ├── ck-0004-Implement-min-and-msec-hrtimeout-un-interruptible-sc.patch
+│   ├── ck-0005-Special-case-calls-of-schedule_timeout-1-to-use-the-.patch
+│   ├── ck-0006-Convert-msleep-to-use-hrtimers-when-active.patch
+│   ├── ck-0007-Replace-all-schedule_timeout-1-with-schedule_min_hrt.patch
+│   ├── ck-0008-Change-all-schedule_timeout-with-msecs_to_jiffies-po.patch
+│   ├── ck-0009-Replace-all-calls-to-schedule_timeout_interruptible-.patch
+│   ├── ck-0010-Replace-all-calls-to-schedule_timeout_uninterruptibl.patch
+│   ├── ck-0011-Fix-build-for-disabled-highres-timers-with-hrtimeout.patch
+│   ├── ck-0012-Make-hrtimer-granularity-and-minimum-hrtimeout-confi.patch
+│   ├── ck-0013-Make-threaded-IRQs-optionally-the-default-which-can-.patch
+│   ├── ck-0014-Reinstate-default-Hz-of-100-in-combination-with-MuQS.patch
+│   ├── ck-0015-Don-t-use-hrtimer-overlay-when-pm_freezing-since-som.patch
+│   ├── ck-0016-wb-buf-throttle-v7.patch
+│   ├── ck-0017-4.9-bfq-v8.patch
+│   ├── ck-0018-Make-writeback-throttling-default-enabled.patch
+│   ├── config.x86_64
+│   ├── fs-20170115-exfat-support.patch
+│   ├── fs-20170126-reiser4-support.patch
+│   ├── init-20161003-Add-a-CONFIG-option-that-sets--O3.patch
+│   ├── kconfig-20170107-enable-additional-cpu-optimizations-for-gcc.patch
+│   ├── kernel-parameters.txt
+│   ├── linux49.hook
+│   ├── linux49.install
+│   ├── linux49.preset
+│   ├── PKGBUILD
+│   ├── tmpfs-idr.patch
+│   └── vfs-ino.patch
+├── linux49-bbswitch
+│   ├── bbswitch.install
+│   └── PKGBUILD
+├── linux49-nvidia
+│   ├── 0001-GCC-Ofast.patch
+│   ├── nvidia.install
+│   └── PKGBUILD
+├── linux49-r8168
+│   ├── kernel-47.patch
+│   ├── PKGBUILD
+│   └── r8168.install
+├── README.md
+└── TREE
+
+4 directories, 49 files

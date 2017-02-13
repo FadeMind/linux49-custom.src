@@ -1,0 +1,387 @@
+# Based on the file created for Arch Linux by:
+# Tobias Powalowski <tpowa@archlinux.org>
+# Thomas Baechler <thomas@archlinux.org>
+
+# Maintainer: Philip Müller <philm@manjaro.org>
+# Maintainer: Guinux <guillaume@manjaro.org>
+# Maintainer: Rob McCathie <rob@manjaro.org>
+
+# Maintainer: FadeMind <fademind@gmail.com>
+
+pkgbase=linux49
+pkgname=('linux49' 'linux49-headers')
+_kernelname=-MANJARO
+_basekernel=4.9
+_basever=49
+_aufs=20161219
+pkgver=${_basekernel}.9
+pkgrel=1
+arch=('x86_64')
+url="http://www.kernel.org/"
+license=('GPL2')
+makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'elfutils')
+options=('!strip')
+source=("https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-${_basekernel}.tar.xz"
+        "https://cdn.kernel.org/pub/linux/kernel/v4.x/patch-${pkgver}.xz"
+        # the main kernel config files
+        ### Main config
+        'config.x86_64'
+        ### standard config files for mkinitcpio ramdisk
+        "${pkgbase}.preset"
+        "${pkgbase}.hook"
+        ### ARCH Patches
+        'change-default-console-loglevel.patch'
+        ### MANJARO Patches
+
+        ### AUFS4
+        "aufs4.9-${_aufs}.patch"
+        'aufs4-base.patch'
+        'aufs4-kbuild.patch'
+        'aufs4-loopback.patch'
+        'aufs4-mmap.patch'
+        'aufs4-standalone.patch'
+        'tmpfs-idr.patch'
+        'vfs-ino.patch'
+        ### reiser4
+        'fs-20170126-reiser4-support.patch'
+        ### exFAT
+        'fs-20170115-exfat-support.patch'
+        ### GCC Patch
+        'kconfig-20170107-enable-additional-cpu-optimizations-for-gcc.patch'
+        ### ZEN Tune Patches
+        'init-20161003-Add-a-CONFIG-option-that-sets--O3.patch'
+        ### Multiple Queue Skiplist Scheduler 4.9-ck1
+        # MuQSS CPU scheduler v0.150 by Con Kolivas
+        # BFQ I/O-scheduler: v8r5 (with cgroups support)
+        'ck-0001-Multiple-Queue-Skiplist-Scheduler-version-0.15.patch'
+        'ck-0002-Make-preemptible-kernel-default.patch'
+        'ck-0003-Expose-vmsplit-option-for-our-poor-32bit-users.patch'
+        'ck-0004-Implement-min-and-msec-hrtimeout-un-interruptible-sc.patch'
+        'ck-0005-Special-case-calls-of-schedule_timeout-1-to-use-the-.patch'
+        'ck-0006-Convert-msleep-to-use-hrtimers-when-active.patch'
+        'ck-0007-Replace-all-schedule_timeout-1-with-schedule_min_hrt.patch'
+        'ck-0008-Change-all-schedule_timeout-with-msecs_to_jiffies-po.patch'
+        'ck-0009-Replace-all-calls-to-schedule_timeout_interruptible-.patch'
+        'ck-0010-Replace-all-calls-to-schedule_timeout_uninterruptibl.patch'
+        'ck-0011-Fix-build-for-disabled-highres-timers-with-hrtimeout.patch'
+        'ck-0012-Make-hrtimer-granularity-and-minimum-hrtimeout-confi.patch'
+        'ck-0013-Make-threaded-IRQs-optionally-the-default-which-can-.patch'
+        'ck-0014-Reinstate-default-Hz-of-100-in-combination-with-MuQS.patch'
+        'ck-0015-Don-t-use-hrtimer-overlay-when-pm_freezing-since-som.patch'
+        'ck-0016-wb-buf-throttle-v7.patch'
+        'ck-0017-4.9-bfq-v8.patch'
+        'ck-0018-Make-writeback-throttling-default-enabled.patch')
+
+prepare() {
+    #  mv "${srcdir}/linux-${_git}" "${srcdir}/linux-${_basekernel}"
+    cd "${srcdir}/linux-${_basekernel}"
+
+    # add upstream patch
+    patch -p1 -i "${srcdir}/patch-${pkgver}"
+
+    # set DEFAULT_CONSOLE_LOGLEVEL to 4 (same value as the 'quiet' kernel param)
+    # remove this when a Kconfig knob is made available by upstream
+    # (relevant patch sent upstream: https://lkml.org/lkml/2011/7/26/227)
+    patch -p1 -i "${srcdir}/change-default-console-loglevel.patch"
+
+    ### add aufs4 support
+    msg2 "Add AUFS4 support"
+    patch -Np1 -i "${srcdir}/aufs4.9-${_aufs}.patch"
+    patch -Np1 -i "${srcdir}/aufs4-base.patch"
+    patch -Np1 -i "${srcdir}/aufs4-kbuild.patch"
+    patch -Np1 -i "${srcdir}/aufs4-loopback.patch"
+    patch -Np1 -i "${srcdir}/aufs4-mmap.patch"
+    patch -Np1 -i "${srcdir}/aufs4-standalone.patch"
+    patch -Np1 -i "${srcdir}/tmpfs-idr.patch"
+    patch -Np1 -i "${srcdir}/vfs-ino.patch"
+    
+    ### Add reiser4 support
+    msg2 "Add reiser4 support"
+    patch -Np1 -i "${srcdir}/fs-20170126-reiser4-support.patch"
+
+    ### Add exFAT support
+    msg2 "Add exFAT support"
+    patch -Np1 -i "${srcdir}/fs-20170115-exfat-support.patch"
+    
+    ### ZEN: Add a CONFIG option that sets -O3
+    msg2 "ZEN: Add a CONFIG option that sets -O3"
+    patch -Np1 -i "${srcdir}/init-20161003-Add-a-CONFIG-option-that-sets--O3.patch"
+
+    ### Add CK Patchset
+    msg2 "Add CK Patchset"
+    patch -Np1 -i "${srcdir}/ck-0001-Multiple-Queue-Skiplist-Scheduler-version-0.15.patch"
+    patch -Np1 -i "${srcdir}/ck-0002-Make-preemptible-kernel-default.patch"
+    patch -Np1 -i "${srcdir}/ck-0003-Expose-vmsplit-option-for-our-poor-32bit-users.patch"
+    patch -Np1 -i "${srcdir}/ck-0004-Implement-min-and-msec-hrtimeout-un-interruptible-sc.patch"
+    patch -Np1 -i "${srcdir}/ck-0005-Special-case-calls-of-schedule_timeout-1-to-use-the-.patch"
+    patch -Np1 -i "${srcdir}/ck-0006-Convert-msleep-to-use-hrtimers-when-active.patch"
+    patch -Np1 -i "${srcdir}/ck-0007-Replace-all-schedule_timeout-1-with-schedule_min_hrt.patch"
+    patch -Np1 -i "${srcdir}/ck-0008-Change-all-schedule_timeout-with-msecs_to_jiffies-po.patch"
+    patch -Np1 -i "${srcdir}/ck-0009-Replace-all-calls-to-schedule_timeout_interruptible-.patch"
+    patch -Np1 -i "${srcdir}/ck-0010-Replace-all-calls-to-schedule_timeout_uninterruptibl.patch"
+    patch -Np1 -i "${srcdir}/ck-0011-Fix-build-for-disabled-highres-timers-with-hrtimeout.patch"
+    patch -Np1 -i "${srcdir}/ck-0012-Make-hrtimer-granularity-and-minimum-hrtimeout-confi.patch"
+    patch -Np1 -i "${srcdir}/ck-0013-Make-threaded-IRQs-optionally-the-default-which-can-.patch"
+    patch -Np1 -i "${srcdir}/ck-0014-Reinstate-default-Hz-of-100-in-combination-with-MuQS.patch"
+    patch -Np1 -i "${srcdir}/ck-0015-Don-t-use-hrtimer-overlay-when-pm_freezing-since-som.patch"
+    patch -Np1 -i "${srcdir}/ck-0016-wb-buf-throttle-v7.patch"
+    patch -Np1 -i "${srcdir}/ck-0017-4.9-bfq-v8.patch"
+    patch -Np1 -i "${srcdir}/ck-0018-Make-writeback-throttling-default-enabled.patch"
+
+    ### Patch source to enable more gcc CPU optimizatons via the make nconfig
+    # https://github.com/graysky2/kernel_gcc_patch
+    msg2 "Patching source with gcc patch to enable more cpus types"
+    patch -Np1 -i "${srcdir}/kconfig-20170107-enable-additional-cpu-optimizations-for-gcc.patch"
+
+    cat "${srcdir}/config.x86_64" > ./.config
+
+    if [ "${_kernelname}" != "" ]; then
+        sed -i "s|CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION=\"${_kernelname}\"|g" ./.config
+        sed -i "s|CONFIG_LOCALVERSION_AUTO=.*|CONFIG_LOCALVERSION_AUTO=n|" ./.config
+    fi
+
+    # set extraversion to pkgrel
+    sed -ri "s|^(EXTRAVERSION =).*|\1 -${pkgrel}|" Makefile
+
+    # don't run depmod on 'make install'. We'll do this ourselves in packaging
+    sed -i '2iexit 0' scripts/depmod.sh
+
+    # get kernel version
+    msg2 "Running make prepare for you to enable patched options of your choosing"
+    make prepare
+
+    # rewrite configuration
+    yes "" | make config >/dev/null
+  
+  # create copy of current config
+    cat .config > "${startdir}/config.x86_64.last"
+}
+
+build() {
+    cd "${srcdir}/linux-${_basekernel}"
+
+    # build!
+    make ${MAKEFLAGS} LOCALVERSION= bzImage modules
+}
+
+package_linux49() {
+    pkgdesc="The ${pkgbase/linux/Linux} kernel and modules"
+    depends=('coreutils' 'linux-firmware' 'kmod' 'mkinitcpio>=0.7')
+    optdepends=('crda: to set the correct wireless channels of your country')
+    provides=("linux=${pkgver}")
+    install=${pkgname}.install
+
+    cd "${srcdir}/linux-${_basekernel}"
+
+    KARCH=x86
+
+    # get kernel version
+    _kernver="$(make LOCALVERSION= kernelrelease)"
+
+    mkdir -p "${pkgdir}"/{lib/modules,lib/firmware,boot}
+    make LOCALVERSION= INSTALL_MOD_PATH="${pkgdir}" modules_install
+    cp arch/$KARCH/boot/bzImage "${pkgdir}/boot/vmlinuz-${_basekernel}-${CARCH}"
+
+    # add kernel version
+    if [ "${CARCH}" = "x86_64" ]; then
+        echo "${pkgver}-${pkgrel}-MANJARO x64" > "${pkgdir}/boot/${pkgbase}-${CARCH}.kver"
+    else
+        echo "${pkgver}-${pkgrel}-MANJARO x32" > "${pkgdir}/boot/${pkgbase}-${CARCH}.kver"
+    fi
+
+    # set correct depmod command for install
+    sed -e "s|%BASEKERNEL%|${_basekernel}|g;s|%KERNVER%|${_kernver}|g;s|%ARCH%|${CARCH}|g" \
+    "${startdir}/${install}" > "${startdir}/${install}.pkg"
+    true && install=${install}.pkg
+
+    # install mkinitcpio preset file for kernel
+    sed "s|%PKGBASE%|${pkgbase}|g;s|%BASEKERNEL%|${_basekernel}|g;s|%ARCH%|${CARCH}|g" "${srcdir}/${pkgbase}.preset" |
+    install -D -m644 /dev/stdin "${pkgdir}/etc/mkinitcpio.d/${pkgbase}.preset"
+
+    # install pacman hook for initramfs regeneration
+    sed "s|%PKGBASE%|${pkgbase}|g;s|%BASEKERNEL%|${_basekernel}|g;s|%ARCH%|${CARCH}|g" "${srcdir}/${pkgbase}.hook" |
+    install -D -m644 /dev/stdin "${pkgdir}/usr/share/libalpm/hooks/98-${pkgbase}.hook"
+
+    # remove build and source links
+    rm -f "${pkgdir}"/lib/modules/${_kernver}/{source,build}
+    # remove the firmware
+    rm -rf "${pkgdir}/lib/firmware"
+    # gzip -9 all modules to save 100MB of space
+    find "${pkgdir}" -name '*.ko' -exec gzip -9 {} \;
+    # make room for external modules
+    ln -s "../extramodules-${_basekernel}${_kernelname:--MANJARO}" "${pkgdir}/lib/modules/${_kernver}/extramodules"
+    # add real version for building modules and running depmod from post_install/upgrade
+    mkdir -p "${pkgdir}/lib/modules/extramodules-${_basekernel}${_kernelname:--MANJARO}"
+    echo "${_kernver}" > "${pkgdir}/lib/modules/extramodules-${_basekernel}${_kernelname:--MANJARO}/version"
+
+    # Now we call depmod...
+    depmod -b "${pkgdir}" -F System.map "${_kernver}"
+
+    # move module tree /lib -> /usr/lib
+    mkdir -p "${pkgdir}/usr"
+    mv "${pkgdir}/lib" "${pkgdir}/usr/"
+
+    # add vmlinux
+    install -D -m644 vmlinux "${pkgdir}/usr/lib/modules/${_kernver}/build/vmlinux" 
+}
+
+package_linux49-headers() {
+    pkgdesc="Header files and scripts for building modules for ${pkgbase/linux/Linux} kernel"
+    provides=("linux-headers=$pkgver")
+
+    install -dm755 "${pkgdir}/usr/lib/modules/${_kernver}"
+
+    cd "${srcdir}/linux-${_basekernel}"
+    install -D -m644 Makefile \
+        "${pkgdir}/usr/lib/modules/${_kernver}/build/Makefile"
+    install -D -m644 kernel/Makefile \
+        "${pkgdir}/usr/lib/modules/${_kernver}/build/kernel/Makefile"
+    install -D -m644 .config \
+        "${pkgdir}/usr/lib/modules/${_kernver}/build/.config"
+
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/include"
+
+    for i in acpi asm-generic config crypto drm generated keys linux math-emu \
+        media net pcmcia scsi sound trace uapi video xen; do
+        cp -a include/${i} "${pkgdir}/usr/lib/modules/${_kernver}/build/include/"
+    done
+
+    # copy arch includes for external modules
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/arch/x86"
+    cp -a arch/x86/include "${pkgdir}/usr/lib/modules/${_kernver}/build/arch/x86/"
+
+    # copy files necessary for later builds, like nvidia and vmware
+    cp Module.symvers "${pkgdir}/usr/lib/modules/${_kernver}/build"
+    cp -a scripts "${pkgdir}/usr/lib/modules/${_kernver}/build"
+
+    # fix permissions on scripts dir
+    chmod og-w -R "${pkgdir}/usr/lib/modules/${_kernver}/build/scripts"
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/.tmp_versions"
+
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/arch/${KARCH}/kernel"
+
+    cp arch/${KARCH}/Makefile "${pkgdir}/usr/lib/modules/${_kernver}/build/arch/${KARCH}/"
+
+    cp arch/${KARCH}/kernel/asm-offsets.s "${pkgdir}/usr/lib/modules/${_kernver}/build/arch/${KARCH}/kernel/"
+
+    # add docbook makefile
+    install -D -m644 Documentation/DocBook/Makefile \
+        "${pkgdir}/usr/lib/modules/${_kernver}/build/Documentation/DocBook/Makefile"
+
+    # add dm headers
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/md"
+    cp drivers/md/*.h "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/md"
+
+    # add inotify.h
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/include/linux"
+    cp include/linux/inotify.h "${pkgdir}/usr/lib/modules/${_kernver}/build/include/linux/"
+
+    # add wireless headers
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/net/mac80211/"
+    cp net/mac80211/*.h "${pkgdir}/usr/lib/modules/${_kernver}/build/net/mac80211/"
+
+    # add dvb headers for external modules
+    # in reference to:
+    # http://bugs.archlinux.org/task/9912
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/dvb-core"
+    cp drivers/media/dvb-core/*.h "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/dvb-core/"
+    # and...
+    # http://bugs.archlinux.org/task/11194
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/include/config/dvb/"
+    cp include/config/dvb/*.h "${pkgdir}/usr/lib/modules/${_kernver}/build/include/config/dvb/"
+
+    # add dvb headers for http://mcentral.de/hg/~mrec/em28xx-new
+    # in reference to:
+    # http://bugs.archlinux.org/task/13146
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/dvb-frontends/"
+    cp drivers/media/dvb-frontends/lgdt330x.h "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/dvb-frontends/"
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/i2c/"
+    cp drivers/media/i2c/msp3400-driver.h "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/i2c/"
+
+    # add dvb headers
+    # in reference to:
+    # http://bugs.archlinux.org/task/20402
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/usb/dvb-usb"
+    cp drivers/media/usb/dvb-usb/*.h "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/usb/dvb-usb/"
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/dvb-frontends"
+    cp drivers/media/dvb-frontends/*.h "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/dvb-frontends/"
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/tuners"
+    cp drivers/media/tuners/*.h "${pkgdir}/usr/lib/modules/${_kernver}/build/drivers/media/tuners/"
+
+    # add xfs and shmem for aufs building
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/fs/xfs/libxfs"
+    mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/mm"
+    cp fs/xfs/libxfs/xfs_sb.h "${pkgdir}/usr/lib/modules/${_kernver}/build/fs/xfs/libxfs/xfs_sb.h"
+
+    # copy in Kconfig files
+    for i in $(find . -name "Kconfig*"); do
+        mkdir -p "${pkgdir}"/usr/lib/modules/${_kernver}/build/`echo ${i} | sed 's|/Kconfig.*||'`
+        cp ${i} "${pkgdir}/usr/lib/modules/${_kernver}/build/${i}"
+    done
+
+    # add objtool for external module building and enabled VALIDATION_STACK option
+    if [ -f tools/objtool/objtool ]; then
+        mkdir -p "${pkgdir}/usr/lib/modules/${_kernver}/build/tools/objtool"
+        cp -a tools/objtool/objtool ${pkgdir}/usr/lib/modules/${_kernver}/build/tools/objtool/
+    fi
+
+    chown -R root.root "${pkgdir}/usr/lib/modules/${_kernver}/build"
+    find "${pkgdir}/usr/lib/modules/${_kernver}/build" -type d -exec chmod 755 {} \;
+
+    # strip scripts directory
+    find "${pkgdir}/usr/lib/modules/${_kernver}/build/scripts" -type f -perm -u+w 2>/dev/null | while read binary ; do
+        case "$(file -bi "${binary}")" in
+        *application/x-sharedlib*) # Libraries (.so)
+            /usr/bin/strip ${STRIP_SHARED} "${binary}";;
+        *application/x-archive*) # Libraries (.a)
+            /usr/bin/strip ${STRIP_STATIC} "${binary}";;
+        *application/x-executable*) # Binaries
+            /usr/bin/strip ${STRIP_BINARIES} "${binary}";;
+        esac
+    done
+
+    # remove unneeded architectures
+    rm -rf "${pkgdir}"/usr/lib/modules/${_kernver}/build/arch/{alpha,arc,arm,arm26,arm64,avr32,blackfin,c6x,cris,frv,h8300,hexagon,ia64,m32r,m68k,m68knommu,metag,mips,microblaze,mn10300,openrisc,parisc,powerpc,ppc,s390,score,sh,sh64,sparc,sparc64,tile,unicore32,um,v850,xtensa}
+
+    # remove a files already in linux-docs package
+    rm -f "${pkgdir}/usr/lib/modules/${_kernver}/build/Documentation/kbuild/Kconfig.recursion-issue-01"
+    rm -f "${pkgdir}/usr/lib/modules/${_kernver}/build/Documentation/kbuild/Kconfig.recursion-issue-02"
+    rm -f "${pkgdir}/usr/lib/modules/${_kernver}/build/Documentation/kbuild/Kconfig.select-break"
+}
+
+sha512sums=('bf67ff812cc3cb7e5059e82cc5db0d9a7c5637f7ed9a42e4730c715bf7047c81ed3a571225f92a33ef0b6d65f35595bc32d773356646df2627da55e9bc7f1f1a'
+            'a7a2d44b83b00b20f1424d12af0f42e1c576d3053feacd13491ef185661fb1c789b9265c500b62f5ede39f57b72f358820000fa6c852a5f035e566ee1dfcd5d9'
+            'ef69d4c7a8683afafbcca19f44a139956f036750122dd51dd5e069cddf1fa1cd8c902bb51c0d36cad818271de0923f462bfcffbc602027a90c241a4dbf43954d'
+            'b46812fc02ea68023a99705c79e3f8e21aa48816ef2bc05daee772a449e04964fb09c0347804db3b99c167edfe8ab12d595c739bbda5352dda01b98969e67898'
+            '471475b2a67cc23ac5b0495e96d1eddab7cab1cbc5734d8b528cbe5d90cb084d8b017c89e0d8cc62e2babc19c5706b7c9cef1c0d8b9522aea053e4a2a559909e'
+            '0e44dc97a15cb8de1722fae5eda79994101bedb55079ce81d7caa6db52e5613cb555e0b0289e953659c29f65ab635e4e33b51973217313335dc442cc8e63e295'
+            'ababf3a1558f4682d22cffc68b27496f16b32e10e6296c86b14a6d728730903729fbf8de862332ce0f5187ed5423c904f47e114ea7db6769df0d53517e750772'
+            '128725812eb5b5a56cd7fe181d4df4cc8ef87eaa77044bc03d30e2281e8db07f7460cd01b4f41eb1e467d24f8f8b4c03644e1ad5390c4f1bab9f52557ee8d3be'
+            '3973cdd877a2dc35a74f015e695435e8b340b0b31dd82c0c803d30bb19f230cfeb340ddafaa157606cfcb73af7c57c5e37fc2c219fdfd363cef08840113941da'
+            'aedb0e74517dc87191fe8ac951e45d9a71792cc4333199a6e20afbd56feefa7e48983618125ee12295044ae66eaad6610a35c3fece33852ce3637e736c5d1f27'
+            '46e2fb5f866f22ac4c463e46cfc605c1198a250673b4fd33aee034a6ad3288c4ce8f63be73c8f3584274042e57987af69f5274ffd2c2cf502eb2207f2a22e8e2'
+            '0d58b1c803128de297e5483747b6397bf48308b92ab5839a31a605427bcb1581e67f80a9021e3fa59216046fb5138164c85db68034e9f1d3f008cbe5b0857481'
+            '0a4dbc3feb5cb12bfe0e3df3a6f1cfad7c784f879dcbdba51a4943f6992d433663b3ce265de1daf33beab632753009cf14bca41be33a19ab31ff52fab8ed20cc'
+            '00e2d4434aa7b0bd7186cfde4b422445f0b8e06bea76b6d8cc70402a81706eb00194902cebec130c235dbfe819d45de105fb360e4c3500d3ea9cd95de1a5654a'
+            '414c2d57f583d14fd0182be5f3a7249569a836bc781fe65aaf7f1b36efc362138807c7d8fb248a878295c62e9e7125db18c03a53e49428ffffd1e55195125596'
+            '15b8407b04ba74eab614f7dad174d0162d4144b13e4760f2c70a85ccbaac0799c709b67028c53b277f938caf12915530bcd7e7fb330620ec8c22006278b888ac'
+            'e8cbaf7e47f453919812584de652842f67aa508e71f2ef2e961c58058089c1d4357d8d26b38c812f1e010754ec76789f0431c823f38d0c3625a691d72a4beff1'
+            '6020428d6f884703f5ba40deb876023e238de5e2ef94d8b4b59d3ee38c8ee3ee025b61834982407686f593206f270a94c7bf6e1643d2567b23f6da18009ff71d'
+            '7303d8eea3bc368ac1b88af0e1af0087d999df496c40781607ea2d0724607424ce7066dd0c8e45cfcd412279890f28e2d1152dc9beb78096b35f4334630eea4b'
+            'b5d4469f14bf06ab7dfbe40603be89e4c80580871b8b7d222d867c385fe9d3da0ff44f90b35b9ec439fb028f130226e4a835283d4d8883b39c1c529d98fa4657'
+            '51c40a00b064bd7f76db842006272cc02acbf32f35090e9e5ffc05b64347812f1c55305e8e69d050899f38133833d4518c409c7054c2366690a8b0c900c9a87d'
+            'ab7593dad644228ed102df20385f099ad06a22586bccf49e5d3635b91a7f5ec34f8068220557ea596f809492dc1acd04535a34fb1fd5088c3c6427bf915d3127'
+            '22352845a0e2319e1ad2b3303cef17d48f654770073bc3251816ccdcff95bfc1227257d3d2075ccdacb49d507b35db1b87d37beebbd499a5dea3f5c3244e63ad'
+            '6652b7b49702955e8c5353940d4a6e28e578b89101c6714f149eaedf54867e9808714c0822c6d42b18d1e3ca72c1a9523f4de4a947a06bc9cf6633d1e442b271'
+            '2eee96a00c13ed3e7f5cc282ffd4a3571e6b853c521766b188f26877ef4104037916dfc53534c5b76bba219808add3d2a844f8d100593d093cf346c46a9aaeb1'
+            'c64b53e1165b0be845a0505bc32a4a1dd405d71a1fab5b076225cdce5ecf5cca14c7d214c62a6ec2c9e6dcc77976f74e54e4adff7280404d2fa05c76313faca0'
+            '7e2744aeb81e513f17b326d7e85cd96cadfeca1271849e40e174077609dd6e9638462a04a446af5c1a40cb2bdf001ca26d34d581dfb204d606fad2f739ee2df9'
+            'aa7c28a5220d55c3aea501129fd8a8135834d67c6af14a4c3ac3c2c6d46e8087b9547003721da67dda1ca3da9a0df3cff13063006b36c2d5e82ae33d30009f56'
+            '788335cdc5553b5f7826ef55636056e094d8528b23d3828689cede6f4fdec1a857422217eb46f79a14e0960c42ef25f8d960eaa7b6c8dfb7e9c6ea24dcee2927'
+            'f4e3fd166083d9b2df895fd4b44b1f1b06886208a90f311d84ca1275d6d73dafd210fd10f1a5c2e88aee45119bf667efbd9a5783cc978e25e8042585add8e71d'
+            'b1ef8658c1f26e8764f9eaf3db8fbe67cd34dc959006cd79b90e741b78591bddb56db7f4b79e6742dd104d50c13ccb9f6201600ec640e61df83567f257de5122'
+            'f0ecd3fc1d2f153b39d87f3c8ab6e0a0fb6ac2219010bef20273e085e1665facc0fd47d89fa2b7be85ea95b8e37c2debe9ad353780bfa2de0633529a9ddb6ffa'
+            '1c3df4b13e5e505ea104cf123328ecf6356fdfadc405680ee0b1005c9814804e439553cf92dae265277e688bf1a30ff4018e1fbaf380b349a460f0e41969d652'
+            '889e7f956293e2b2d87e6534e2d56e31d9b64ab970bfb0316aca54b4725ee64e1fe2f5a9851076c8f64e3a1c6bd5c8cb58f867cb32fbbd5e138a8f27db9a4a92'
+            '9517649fa4a3e7a9c6461a85b9567d1be3044aedf6a682cfdc9b76f2bef448e9cac8870820bc6b5d57a1343e06b7795865a11b5dd65e14c0400bf2255ce05dde'
+            'db6539ae7448c68780caed8cb24988517947a974c23d4b5f63054f29ce8f230840cef7b3136e611b69760e0cb8c9f20045913b78a4c10c9ac396c64f08491b65')

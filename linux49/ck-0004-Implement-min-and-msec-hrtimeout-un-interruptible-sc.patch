@@ -1,0 +1,111 @@
+From fe7270675509f00e15ce4afc1262b97bcc7b9989 Mon Sep 17 00:00:00 2001
+From: Con Kolivas <kernel@kolivas.org>
+Date: Tue, 1 Nov 2016 12:54:20 +1100
+Subject: [PATCH 04/19] Implement min and msec hrtimeout un/interruptible
+ schedule timeout variants with a lower resolution of 1ms to work around low
+ Hz time resolutions.
+
+---
+ include/linux/sched.h |  6 +++++
+ kernel/time/hrtimer.c | 71 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 77 insertions(+)
+
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 3b030b8..3bb65ba 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -437,6 +437,12 @@ extern signed long schedule_timeout_interruptible(signed long timeout);
+ extern signed long schedule_timeout_killable(signed long timeout);
+ extern signed long schedule_timeout_uninterruptible(signed long timeout);
+ extern signed long schedule_timeout_idle(signed long timeout);
++
++extern signed long schedule_msec_hrtimeout(signed long timeout);
++extern signed long schedule_min_hrtimeout(void);
++extern signed long schedule_msec_hrtimeout_interruptible(signed long timeout);
++extern signed long schedule_msec_hrtimeout_uninterruptible(signed long timeout);
++
+ asmlinkage void schedule(void);
+ extern void schedule_preempt_disabled(void);
+ 
+diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
+index bb5ec42..b7f99bf 100644
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -1788,3 +1788,74 @@ int __sched schedule_hrtimeout(ktime_t *expires,
+ 	return schedule_hrtimeout_range(expires, 0, mode);
+ }
+ EXPORT_SYMBOL_GPL(schedule_hrtimeout);
++
++/*
++ * As per schedule_hrtimeout but taskes a millisecond value and returns how
++ * many milliseconds are left.
++ */
++signed long __sched schedule_msec_hrtimeout(signed long timeout)
++{
++	struct hrtimer_sleeper t;
++	int delta, secs, jiffs;
++	ktime_t expires;
++
++	if (!timeout) {
++		__set_current_state(TASK_RUNNING);
++		return 0;
++	}
++
++	jiffs = msecs_to_jiffies(timeout);
++	/*
++	 * If regular timer resolution is adequate or hrtimer resolution is not
++	 * (yet) better than Hz, as would occur during startup, use regular
++	 * timers.
++	 */
++	if (jiffs > 4 || hrtimer_resolution >= NSEC_PER_SEC / HZ)
++		return schedule_timeout(jiffs);
++
++	secs = timeout / 1000;
++	delta = (timeout % 1000) * NSEC_PER_MSEC;
++	expires = ktime_set(secs, delta);
++
++	hrtimer_init_on_stack(&t.timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	hrtimer_set_expires_range_ns(&t.timer, expires, delta);
++
++	hrtimer_init_sleeper(&t, current);
++
++	hrtimer_start_expires(&t.timer, HRTIMER_MODE_REL);
++
++	if (likely(t.task))
++		schedule();
++
++	hrtimer_cancel(&t.timer);
++	destroy_hrtimer_on_stack(&t.timer);
++
++	__set_current_state(TASK_RUNNING);
++
++	expires = hrtimer_expires_remaining(&t.timer);
++	timeout = ktime_to_ms(expires);
++	return timeout < 0 ? 0 : timeout;
++}
++
++EXPORT_SYMBOL(schedule_msec_hrtimeout);
++
++signed long __sched schedule_min_hrtimeout(void)
++{
++	return schedule_msec_hrtimeout(1);
++}
++
++EXPORT_SYMBOL(schedule_min_hrtimeout);
++
++signed long __sched schedule_msec_hrtimeout_interruptible(signed long timeout)
++{
++	__set_current_state(TASK_INTERRUPTIBLE);
++	return schedule_msec_hrtimeout(timeout);
++}
++EXPORT_SYMBOL(schedule_msec_hrtimeout_interruptible);
++
++signed long __sched schedule_msec_hrtimeout_uninterruptible(signed long timeout)
++{
++	__set_current_state(TASK_UNINTERRUPTIBLE);
++	return schedule_msec_hrtimeout(timeout);
++}
++EXPORT_SYMBOL(schedule_msec_hrtimeout_uninterruptible);
+-- 
+2.7.4
+

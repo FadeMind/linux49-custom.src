@@ -1,0 +1,71 @@
+From f808c97c7a83e1ebc4f511d9fd660dd1b8a8f4c5 Mon Sep 17 00:00:00 2001
+From: Con Kolivas <kernel@kolivas.org>
+Date: Tue, 22 Nov 2016 09:52:44 +1100
+Subject: [PATCH 11/19] Fix build for disabled highres timers with hrtimeout
+ code.
+
+---
+ include/linux/sched.h | 22 ++++++++++++++++++++++
+ kernel/time/timer.c   |  2 ++
+ 2 files changed, 24 insertions(+)
+
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 3bb65ba..b9a91d9 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -438,10 +438,32 @@ extern signed long schedule_timeout_killable(signed long timeout);
+ extern signed long schedule_timeout_uninterruptible(signed long timeout);
+ extern signed long schedule_timeout_idle(signed long timeout);
+ 
++#ifdef CONFIG_HIGH_RES_TIMERS
+ extern signed long schedule_msec_hrtimeout(signed long timeout);
+ extern signed long schedule_min_hrtimeout(void);
+ extern signed long schedule_msec_hrtimeout_interruptible(signed long timeout);
+ extern signed long schedule_msec_hrtimeout_uninterruptible(signed long timeout);
++#else
++static inline signed long schedule_msec_hrtimeout(signed long timeout)
++{
++	return schedule_timeout(msecs_to_jiffies(timeout));
++}
++
++static inline signed long schedule_min_hrtimeout(void)
++{
++	return schedule_timeout(1);
++}
++
++static inline signed long schedule_msec_hrtimeout_interruptible(signed long timeout)
++{
++	return schedule_timeout_interruptible(msecs_to_jiffies(timeout));
++}
++
++static inline signed long schedule_msec_hrtimeout_uninterruptible(signed long timeout)
++{
++	return schedule_timeout_uninterruptible(msecs_to_jiffies(timeout));
++}
++#endif
+ 
+ asmlinkage void schedule(void);
+ extern void schedule_preempt_disabled(void);
+diff --git a/kernel/time/timer.c b/kernel/time/timer.c
+index b4291f1..c7217aa 100644
+--- a/kernel/time/timer.c
++++ b/kernel/time/timer.c
+@@ -1759,6 +1759,7 @@ signed long __sched schedule_timeout(signed long timeout)
+ 
+ 	expire = timeout + jiffies;
+ 
++#ifdef CONFIG_HIGH_RES_TIMERS
+ 	if (timeout == 1 && hrtimer_resolution < NSEC_PER_SEC / HZ) {
+ 		/*
+ 		 * Special case 1 as being a request for the minimum timeout
+@@ -1769,6 +1770,7 @@ signed long __sched schedule_timeout(signed long timeout)
+ 			return 0;
+ 		goto out_timeout;
+ 	}
++#endif
+ 
+ 	setup_timer_on_stack(&timer, process_timeout, (unsigned long)current);
+ 	__mod_timer(&timer, expire, false);
+-- 
+2.7.4
+

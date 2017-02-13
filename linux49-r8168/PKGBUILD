@@ -1,0 +1,57 @@
+# Based on the file created for Arch Linux by:
+# Massimiliano Torromeo <massimiliano.torromeo@gmail.com>
+# Bob Fanger < bfanger(at)gmail >
+# Filip <fila pruda com>, Det < nimetonmaili(at)gmail >
+
+# Maintainer: Philip Müller <philm@manjaro.org>
+# Maintainer: Guinux <guillaume@manjaro.org>
+# Maintainer: Rob McCathie <rob@manjaro.org>
+
+_linuxprefix=linux49
+_extramodules=extramodules-4.9-MANJARO
+pkgname=$_linuxprefix-r8168
+_pkgname=r8168
+pkgver=8.043.02
+pkgrel=7
+pkgdesc="A kernel module for Realtek 8168 network cards"
+url="http://www.realtek.com.tw"
+license=("GPL")
+arch=('x86_64')
+depends=('glibc' "$_linuxprefix")
+makedepends=("$_linuxprefix-headers")
+provides=("$_pkgname=$pkgver")
+groups=("$_linuxprefix-extramodules")
+source=("https://github.com/mtorromeo/r8168/archive/$pkgver/$_pkgname-$pkgver.tar.gz" kernel-47.patch)
+sha256sums=('ea22aa1dfda20615f5e114f982f7e61385f871f682eea0c154245760a439abc4'
+            'ab9bda30f23cb1fa932c637b67e987de3a981a82cbcc71eccbd212b26d293dd3')
+install=$_pkgname.install
+
+prepare() {
+    # https://github.com/torvalds/linux/commit/a188222b6ed29404ac2d4232d35d1fe0e77af370
+    sed -i 's|NETIF_F_ALL_CSUM|NETIF_F_CSUM_MASK|g' "$_pkgname-$pkgver"/src/r8168_n.c
+    cd "$_pkgname-$pkgver"
+    patch -p1 -i "${srcdir}/kernel-47.patch"
+}
+
+build() {
+    _kernver="$(cat /usr/lib/modules/$_extramodules/version || true)"
+
+    cd "$_pkgname-$pkgver"
+
+    # avoid using the Makefile directly -- it doesn't understand
+    # any kernel but the current.
+    make -C /usr/lib/modules/$_kernver/build \
+      SUBDIRS="$srcdir/$_pkgname-$pkgver/src" \
+      EXTRA_CFLAGS="-DCONFIG_R8168_NAPI -DCONFIG_R8168_VLAN" \
+      modules
+}
+
+package() {
+    cd "$srcdir/$_pkgname-$pkgver/src"
+    install -D -m644 $_pkgname.ko "$pkgdir/usr/lib/modules/$_extramodules/$_pkgname.ko"
+
+    # set the kernel we've built for inside the install script
+    sed -i -e "s/EXTRAMODULES=.*/EXTRAMODULES=${_extramodules}/g" "${startdir}/${_pkgname}.install"
+
+    find "$pkgdir" -name '*.ko' -exec gzip -9 {} \;
+}

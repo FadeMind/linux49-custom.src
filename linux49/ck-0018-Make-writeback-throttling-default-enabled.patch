@@ -1,0 +1,34 @@
+From 78216705f1a1ac671f4a0529d14bb0e99b9fd605 Mon Sep 17 00:00:00 2001
+From: Con Kolivas <kernel@kolivas.org>
+Date: Wed, 7 Dec 2016 21:26:57 +1100
+Subject: [PATCH 18/19] Make writeback throttling default enabled.
+
+---
+ block/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/block/Kconfig b/block/Kconfig
+index 7c8523e..9382427 100644
+--- a/block/Kconfig
++++ b/block/Kconfig
+@@ -114,7 +114,7 @@ config BLK_CMDLINE_PARSER
+ 
+ config BLK_WBT
+ 	bool "Enable support for block device writeback throttling"
+-	default n
++	default y
+ 	---help---
+ 	Enabling this option enables the block layer to throttle buffered
+ 	writeback from the VM, making it more smooth and having less
+@@ -122,7 +122,7 @@ config BLK_WBT
+ 
+ config BLK_WBT_SQ
+ 	bool "Single queue writeback throttling"
+-	default n
++	default y
+ 	depends on BLK_WBT
+ 	---help---
+ 	Enable writeback throttling by default on legacy single queue devices
+-- 
+2.7.4
+

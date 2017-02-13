@@ -1,0 +1,537 @@
+From a95e06e11c29950874342dd9a188c3c36783dc50 Mon Sep 17 00:00:00 2001
+From: Con Kolivas <kernel@kolivas.org>
+Date: Fri, 4 Nov 2016 09:17:19 +1100
+Subject: [PATCH 09/19] Replace all calls to schedule_timeout_interruptible of
+ potentially under 50ms to use schedule_msec_hrtimeout_interruptible.
+
+---
+ drivers/hwmon/fam15h_power.c                    |   2 +-
+ drivers/iio/light/tsl2563.c                     |   6 +-
+ drivers/media/i2c/msp3400-driver.c              |   4 +-
+ drivers/media/pci/ivtv/ivtv-gpio.c              |   6 +-
+ drivers/media/radio/radio-mr800.c               |   2 +-
+ drivers/media/radio/radio-tea5777.c             |   2 +-
+ drivers/media/radio/tea575x.c                   |   2 +-
+ drivers/misc/panel.c                            |   2 +-
+ drivers/parport/ieee1284.c                      |   2 +-
+ drivers/parport/ieee1284_ops.c                  |   2 +-
+ drivers/platform/x86/intel_ips.c                |   8 +-
+ drivers/staging/unisys/visorbus/periodic_work.c | 204 ++++++++++++++++++++++++
+ net/core/pktgen.c                               |   2 +-
+ sound/soc/codecs/wm8350.c                       |  12 +-
+ sound/soc/codecs/wm8900.c                       |   2 +-
+ sound/soc/codecs/wm9713.c                       |   4 +-
+ 16 files changed, 231 insertions(+), 31 deletions(-)
+ create mode 100644 drivers/staging/unisys/visorbus/periodic_work.c
+
+diff --git a/drivers/hwmon/fam15h_power.c b/drivers/hwmon/fam15h_power.c
+index 15aa49d..991e8a7 100644
+--- a/drivers/hwmon/fam15h_power.c
++++ b/drivers/hwmon/fam15h_power.c
+@@ -238,7 +238,7 @@ static ssize_t acc_show_power(struct device *dev,
+ 		prev_ptsc[cu] = data->cpu_sw_pwr_ptsc[cu];
+ 	}
+ 
+-	leftover = schedule_timeout_interruptible(msecs_to_jiffies(data->power_period));
++	leftover = schedule_msec_hrtimeout_interruptible((data->power_period));
+ 	if (leftover)
+ 		return 0;
+ 
+diff --git a/drivers/iio/light/tsl2563.c b/drivers/iio/light/tsl2563.c
+index 04598ae..a8c095d 100644
+--- a/drivers/iio/light/tsl2563.c
++++ b/drivers/iio/light/tsl2563.c
+@@ -282,11 +282,7 @@ static void tsl2563_wait_adc(struct tsl2563_chip *chip)
+ 	default:
+ 		delay = 402;
+ 	}
+-	/*
+-	 * TODO: Make sure that we wait at least required delay but why we
+-	 * have to extend it one tick more?
+-	 */
+-	schedule_timeout_interruptible(msecs_to_jiffies(delay) + 2);
++	schedule_msec_hrtimeout_interruptible(delay + 1);
+ }
+ 
+ static int tsl2563_adjust_gainlevel(struct tsl2563_chip *chip, u16 adc)
+diff --git a/drivers/media/i2c/msp3400-driver.c b/drivers/media/i2c/msp3400-driver.c
+index 503b7c4..d790a90 100644
+--- a/drivers/media/i2c/msp3400-driver.c
++++ b/drivers/media/i2c/msp3400-driver.c
+@@ -184,7 +184,7 @@ static int msp_read(struct i2c_client *client, int dev, int addr)
+ 			break;
+ 		v4l_warn(client, "I/O error #%d (read 0x%02x/0x%02x)\n", err,
+ 		       dev, addr);
+-		schedule_timeout_interruptible(msecs_to_jiffies(10));
++		schedule_msec_hrtimeout_interruptible((10));
+ 	}
+ 	if (err == 3) {
+ 		v4l_warn(client, "resetting chip, sound will go off.\n");
+@@ -225,7 +225,7 @@ static int msp_write(struct i2c_client *client, int dev, int addr, int val)
+ 			break;
+ 		v4l_warn(client, "I/O error #%d (write 0x%02x/0x%02x)\n", err,
+ 		       dev, addr);
+-		schedule_timeout_interruptible(msecs_to_jiffies(10));
++		schedule_msec_hrtimeout_interruptible((10));
+ 	}
+ 	if (err == 3) {
+ 		v4l_warn(client, "resetting chip, sound will go off.\n");
+diff --git a/drivers/media/pci/ivtv/ivtv-gpio.c b/drivers/media/pci/ivtv/ivtv-gpio.c
+index f752f39..23372af6 100644
+--- a/drivers/media/pci/ivtv/ivtv-gpio.c
++++ b/drivers/media/pci/ivtv/ivtv-gpio.c
+@@ -117,7 +117,7 @@ void ivtv_reset_ir_gpio(struct ivtv *itv)
+ 	curout = (curout & ~0xF) | 1;
+ 	write_reg(curout, IVTV_REG_GPIO_OUT);
+ 	/* We could use something else for smaller time */
+-	schedule_timeout_interruptible(msecs_to_jiffies(1));
++	schedule_msec_hrtimeout_interruptible((1));
+ 	curout |= 2;
+ 	write_reg(curout, IVTV_REG_GPIO_OUT);
+ 	curdir &= ~0x80;
+@@ -137,11 +137,11 @@ int ivtv_reset_tuner_gpio(void *dev, int component, int cmd, int value)
+ 	curout = read_reg(IVTV_REG_GPIO_OUT);
+ 	curout &= ~(1 << itv->card->xceive_pin);
+ 	write_reg(curout, IVTV_REG_GPIO_OUT);
+-	schedule_timeout_interruptible(msecs_to_jiffies(1));
++	schedule_msec_hrtimeout_interruptible((1));
+ 
+ 	curout |= 1 << itv->card->xceive_pin;
+ 	write_reg(curout, IVTV_REG_GPIO_OUT);
+-	schedule_timeout_interruptible(msecs_to_jiffies(1));
++	schedule_msec_hrtimeout_interruptible((1));
+ 	return 0;
+ }
+ 
+diff --git a/drivers/media/radio/radio-mr800.c b/drivers/media/radio/radio-mr800.c
+index c2927fd..bdee269 100644
+--- a/drivers/media/radio/radio-mr800.c
++++ b/drivers/media/radio/radio-mr800.c
+@@ -382,7 +382,7 @@ static int vidioc_s_hw_freq_seek(struct file *file, void *priv,
+ 			retval = -ENODATA;
+ 			break;
+ 		}
+-		if (schedule_timeout_interruptible(msecs_to_jiffies(10))) {
++		if (schedule_msec_hrtimeout_interruptible((10))) {
+ 			retval = -ERESTARTSYS;
+ 			break;
+ 		}
+diff --git a/drivers/media/radio/radio-tea5777.c b/drivers/media/radio/radio-tea5777.c
+index 83fe7ab..aaae5fa 100644
+--- a/drivers/media/radio/radio-tea5777.c
++++ b/drivers/media/radio/radio-tea5777.c
+@@ -249,7 +249,7 @@ static int radio_tea5777_update_read_reg(struct radio_tea5777 *tea, int wait)
+ 	}
+ 
+ 	if (wait) {
+-		if (schedule_timeout_interruptible(msecs_to_jiffies(wait)))
++		if (schedule_msec_hrtimeout_interruptible((wait)))
+ 			return -ERESTARTSYS;
+ 	}
+ 
+diff --git a/drivers/media/radio/tea575x.c b/drivers/media/radio/tea575x.c
+index 4dc2067..29f4416 100644
+--- a/drivers/media/radio/tea575x.c
++++ b/drivers/media/radio/tea575x.c
+@@ -416,7 +416,7 @@ int snd_tea575x_s_hw_freq_seek(struct file *file, struct snd_tea575x *tea,
+ 	for (;;) {
+ 		if (time_after(jiffies, timeout))
+ 			break;
+-		if (schedule_timeout_interruptible(msecs_to_jiffies(10))) {
++		if (schedule_msec_hrtimeout_interruptible((10))) {
+ 			/* some signal arrived, stop search */
+ 			tea->val &= ~TEA575X_BIT_SEARCH;
+ 			snd_tea575x_set_freq(tea);
+diff --git a/drivers/misc/panel.c b/drivers/misc/panel.c
+index 6030ac5..f0c1a101 100644
+--- a/drivers/misc/panel.c
++++ b/drivers/misc/panel.c
+@@ -760,7 +760,7 @@ static void long_sleep(int ms)
+ 	if (in_interrupt())
+ 		mdelay(ms);
+ 	else
+-		schedule_timeout_interruptible(msecs_to_jiffies(ms));
++		schedule_msec_hrtimeout_interruptible((ms));
+ }
+ 
+ /*
+diff --git a/drivers/parport/ieee1284.c b/drivers/parport/ieee1284.c
+index f9fd4b3..00ad2f3 100644
+--- a/drivers/parport/ieee1284.c
++++ b/drivers/parport/ieee1284.c
+@@ -215,7 +215,7 @@ int parport_wait_peripheral(struct parport *port,
+ 			/* parport_wait_event didn't time out, but the
+ 			 * peripheral wasn't actually ready either.
+ 			 * Wait for another 10ms. */
+-			schedule_timeout_interruptible(msecs_to_jiffies(10));
++			schedule_msec_hrtimeout_interruptible((10));
+ 		}
+ 	}
+ 
+diff --git a/drivers/parport/ieee1284_ops.c b/drivers/parport/ieee1284_ops.c
+index 2e21af4..da5f240 100644
+--- a/drivers/parport/ieee1284_ops.c
++++ b/drivers/parport/ieee1284_ops.c
+@@ -536,7 +536,7 @@ size_t parport_ieee1284_ecp_read_data (struct parport *port,
+ 			/* Yield the port for a while. */
+ 			if (count && dev->port->irq != PARPORT_IRQ_NONE) {
+ 				parport_release (dev);
+-				schedule_timeout_interruptible(msecs_to_jiffies(40));
++				schedule_msec_hrtimeout_interruptible((40));
+ 				parport_claim_or_block (dev);
+ 			}
+ 			else
+diff --git a/drivers/platform/x86/intel_ips.c b/drivers/platform/x86/intel_ips.c
+index 55663b3..0363fed 100644
+--- a/drivers/platform/x86/intel_ips.c
++++ b/drivers/platform/x86/intel_ips.c
+@@ -812,7 +812,7 @@ static int ips_adjust(void *data)
+ 			ips_gpu_lower(ips);
+ 
+ sleep:
+-		schedule_timeout_interruptible(msecs_to_jiffies(IPS_ADJUST_PERIOD));
++		schedule_msec_hrtimeout_interruptible((IPS_ADJUST_PERIOD));
+ 	} while (!kthread_should_stop());
+ 
+ 	dev_dbg(&ips->dev->dev, "ips-adjust thread stopped\n");
+@@ -991,7 +991,7 @@ static int ips_monitor(void *data)
+ 	seqno_timestamp = get_jiffies_64();
+ 
+ 	old_cpu_power = thm_readl(THM_CEC);
+-	schedule_timeout_interruptible(msecs_to_jiffies(IPS_SAMPLE_PERIOD));
++	schedule_msec_hrtimeout_interruptible((IPS_SAMPLE_PERIOD));
+ 
+ 	/* Collect an initial average */
+ 	for (i = 0; i < IPS_SAMPLE_COUNT; i++) {
+@@ -1018,7 +1018,7 @@ static int ips_monitor(void *data)
+ 			mchp_samples[i] = mchp;
+ 		}
+ 
+-		schedule_timeout_interruptible(msecs_to_jiffies(IPS_SAMPLE_PERIOD));
++		schedule_msec_hrtimeout_interruptible((IPS_SAMPLE_PERIOD));
+ 		if (kthread_should_stop())
+ 			break;
+ 	}
+@@ -1045,7 +1045,7 @@ static int ips_monitor(void *data)
+ 	 * us to reduce the sample frequency if the CPU and GPU are idle.
+ 	 */
+ 	old_cpu_power = thm_readl(THM_CEC);
+-	schedule_timeout_interruptible(msecs_to_jiffies(IPS_SAMPLE_PERIOD));
++	schedule_msec_hrtimeout_interruptible((IPS_SAMPLE_PERIOD));
+ 	last_sample_period = IPS_SAMPLE_PERIOD;
+ 
+ 	setup_deferrable_timer_on_stack(&timer, monitor_timeout,
+diff --git a/drivers/staging/unisys/visorbus/periodic_work.c b/drivers/staging/unisys/visorbus/periodic_work.c
+new file mode 100644
+index 0000000..b930287
+--- /dev/null
++++ b/drivers/staging/unisys/visorbus/periodic_work.c
+@@ -0,0 +1,204 @@
++/* periodic_work.c
++ *
++ * Copyright (C) 2010 - 2015 UNISYS CORPORATION
++ * All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, GOOD TITLE or
++ * NON INFRINGEMENT.  See the GNU General Public License for more
++ * details.
++ */
++
++/*
++ *  Helper functions to schedule periodic work in Linux kernel mode.
++ */
++#include <linux/sched.h>
++
++#include "periodic_work.h"
++
++#define MYDRVNAME "periodic_work"
++
++struct periodic_work {
++	rwlock_t lock;
++	struct delayed_work work;
++	void (*workfunc)(void *);
++	void *workfuncarg;
++	bool is_scheduled;
++	bool want_to_stop;
++	ulong jiffy_interval;
++	struct workqueue_struct *workqueue;
++	const char *devnam;
++};
++
++static void periodic_work_func(struct work_struct *work)
++{
++	struct periodic_work *pw;
++
++	pw = container_of(work, struct periodic_work, work.work);
++	(*pw->workfunc)(pw->workfuncarg);
++}
++
++struct periodic_work
++*visor_periodic_work_create(ulong jiffy_interval,
++			    struct workqueue_struct *workqueue,
++			    void (*workfunc)(void *),
++			    void *workfuncarg,
++			    const char *devnam)
++{
++	struct periodic_work *pw;
++
++	pw = kzalloc(sizeof(*pw), GFP_KERNEL | __GFP_NORETRY);
++	if (!pw)
++		return NULL;
++
++	rwlock_init(&pw->lock);
++	pw->jiffy_interval = jiffy_interval;
++	pw->workqueue = workqueue;
++	pw->workfunc = workfunc;
++	pw->workfuncarg = workfuncarg;
++	pw->devnam = devnam;
++	return pw;
++}
++EXPORT_SYMBOL_GPL(visor_periodic_work_create);
++
++void visor_periodic_work_destroy(struct periodic_work *pw)
++{
++	kfree(pw);
++}
++EXPORT_SYMBOL_GPL(visor_periodic_work_destroy);
++
++/** Call this from your periodic work worker function to schedule the next
++ *  call.
++ *  If this function returns false, there was a failure and the
++ *  periodic work is no longer scheduled
++ */
++bool visor_periodic_work_nextperiod(struct periodic_work *pw)
++{
++	bool rc = false;
++
++	write_lock(&pw->lock);
++	if (pw->want_to_stop) {
++		pw->is_scheduled = false;
++		pw->want_to_stop = false;
++		rc = true;  /* yes, true; see visor_periodic_work_stop() */
++		goto unlock;
++	} else if (!queue_delayed_work(pw->workqueue, &pw->work,
++				       pw->jiffy_interval)) {
++		pw->is_scheduled = false;
++		rc = false;
++		goto unlock;
++	}
++	rc = true;
++unlock:
++	write_unlock(&pw->lock);
++	return rc;
++}
++EXPORT_SYMBOL_GPL(visor_periodic_work_nextperiod);
++
++/** This function returns true iff new periodic work was actually started.
++ *  If this function returns false, then no work was started
++ *  (either because it was already started, or because of a failure).
++ */
++bool visor_periodic_work_start(struct periodic_work *pw)
++{
++	bool rc = false;
++
++	write_lock(&pw->lock);
++	if (pw->is_scheduled) {
++		rc = false;
++		goto unlock;
++	}
++	if (pw->want_to_stop) {
++		rc = false;
++		goto unlock;
++	}
++	INIT_DELAYED_WORK(&pw->work, &periodic_work_func);
++	if (!queue_delayed_work(pw->workqueue, &pw->work,
++				pw->jiffy_interval)) {
++		rc = false;
++		goto unlock;
++	}
++	pw->is_scheduled = true;
++	rc = true;
++unlock:
++	write_unlock(&pw->lock);
++	return rc;
++}
++EXPORT_SYMBOL_GPL(visor_periodic_work_start);
++
++/** This function returns true iff your call actually stopped the periodic
++ *  work.
++ *
++ *  -- PAY ATTENTION... this is important --
++ *
++ *  NO NO #1
++ *
++ *     Do NOT call this function from some function that is running on the
++ *     same workqueue as the work you are trying to stop might be running
++ *     on!  If you violate this rule, visor_periodic_work_stop() MIGHT work,
++ *     but it also MIGHT get hung up in an infinite loop saying
++ *     "waiting for delayed work...".  This will happen if the delayed work
++ *     you are trying to cancel has been put in the workqueue list, but can't
++ *     run yet because we are running that same workqueue thread right now.
++ *
++ *     Bottom line: If you need to call visor_periodic_work_stop() from a
++ *     workitem, be sure the workitem is on a DIFFERENT workqueue than the
++ *     workitem that you are trying to cancel.
++ *
++ *     If I could figure out some way to check for this "no no" condition in
++ *     the code, I would.  It would have saved me the trouble of writing this
++ *     long comment.  And also, don't think this is some "theoretical" race
++ *     condition.  It is REAL, as I have spent the day chasing it.
++ *
++ *  NO NO #2
++ *
++ *     Take close note of the locks that you own when you call this function.
++ *     You must NOT own any locks that are needed by the periodic work
++ *     function that is currently installed.  If you DO, a deadlock may result,
++ *     because stopping the periodic work often involves waiting for the last
++ *     iteration of the periodic work function to complete.  Again, if you hit
++ *     this deadlock, you will get hung up in an infinite loop saying
++ *     "waiting for delayed work...".
++ */
++bool visor_periodic_work_stop(struct periodic_work *pw)
++{
++	bool stopped_something = false;
++
++	write_lock(&pw->lock);
++	stopped_something = pw->is_scheduled && (!pw->want_to_stop);
++	while (pw->is_scheduled) {
++		pw->want_to_stop = true;
++		if (cancel_delayed_work(&pw->work)) {
++			/* We get here if the delayed work was pending as
++			 * delayed work, but was NOT run.
++			 */
++			WARN_ON(!pw->is_scheduled);
++			pw->is_scheduled = false;
++		} else {
++			/* If we get here, either the delayed work:
++			 * - was run, OR,
++			 * - is running RIGHT NOW on another processor, OR,
++			 * - wasn't even scheduled (there is a miniscule
++			 *   timing window where this could be the case)
++			 * flush_workqueue() would make sure it is finished
++			 * executing, but that still isn't very useful, which
++			 * explains the loop...
++			 */
++		}
++		if (pw->is_scheduled) {
++			write_unlock(&pw->lock);
++			schedule_msec_hrtimeout_interruptible((10));
++			write_lock(&pw->lock);
++		} else {
++			pw->want_to_stop = false;
++		}
++	}
++	write_unlock(&pw->lock);
++	return stopped_something;
++}
++EXPORT_SYMBOL_GPL(visor_periodic_work_stop);
+diff --git a/net/core/pktgen.c b/net/core/pktgen.c
+index 306b8f0..4f4ab3d 100644
+--- a/net/core/pktgen.c
++++ b/net/core/pktgen.c
+@@ -1992,7 +1992,7 @@ static void pktgen_mark_device(const struct pktgen_net *pn, const char *ifname)
+ 		mutex_unlock(&pktgen_thread_lock);
+ 		pr_debug("%s: waiting for %s to disappear....\n",
+ 			 __func__, ifname);
+-		schedule_timeout_interruptible(msecs_to_jiffies(msec_per_try));
++		schedule_msec_hrtimeout_interruptible((msec_per_try));
+ 		mutex_lock(&pktgen_thread_lock);
+ 
+ 		if (++i >= max_tries) {
+diff --git a/sound/soc/codecs/wm8350.c b/sound/soc/codecs/wm8350.c
+index 2efc5b4..3e3248c 100644
+--- a/sound/soc/codecs/wm8350.c
++++ b/sound/soc/codecs/wm8350.c
+@@ -236,10 +236,10 @@ static void wm8350_pga_work(struct work_struct *work)
+ 		    out2->ramp == WM8350_RAMP_UP) {
+ 			/* delay is longer over 0dB as increases are larger */
+ 			if (i >= WM8350_OUTn_0dB)
+-				schedule_timeout_interruptible(msecs_to_jiffies
++				schedule_msec_hrtimeout_interruptible(
+ 							       (2));
+ 			else
+-				schedule_timeout_interruptible(msecs_to_jiffies
++				schedule_msec_hrtimeout_interruptible(
+ 							       (1));
+ 		} else
+ 			udelay(50);	/* doesn't matter if we delay longer */
+@@ -1123,7 +1123,7 @@ static int wm8350_set_bias_level(struct snd_soc_codec *codec,
+ 					 (platform->dis_out4 << 6));
+ 
+ 			/* wait for discharge */
+-			schedule_timeout_interruptible(msecs_to_jiffies
++			schedule_msec_hrtimeout_interruptible(
+ 						       (platform->
+ 							cap_discharge_msecs));
+ 
+@@ -1139,7 +1139,7 @@ static int wm8350_set_bias_level(struct snd_soc_codec *codec,
+ 					 WM8350_VBUFEN);
+ 
+ 			/* wait for vmid */
+-			schedule_timeout_interruptible(msecs_to_jiffies
++			schedule_msec_hrtimeout_interruptible(
+ 						       (platform->
+ 							vmid_charge_msecs));
+ 
+@@ -1190,7 +1190,7 @@ static int wm8350_set_bias_level(struct snd_soc_codec *codec,
+ 		wm8350_reg_write(wm8350, WM8350_POWER_MGMT_1, pm1);
+ 
+ 		/* wait */
+-		schedule_timeout_interruptible(msecs_to_jiffies
++		schedule_msec_hrtimeout_interruptible(
+ 					       (platform->
+ 						vmid_discharge_msecs));
+ 
+@@ -1208,7 +1208,7 @@ static int wm8350_set_bias_level(struct snd_soc_codec *codec,
+ 				 pm1 | WM8350_OUTPUT_DRAIN_EN);
+ 
+ 		/* wait */
+-		schedule_timeout_interruptible(msecs_to_jiffies
++		schedule_msec_hrtimeout_interruptible(
+ 					       (platform->drain_msecs));
+ 
+ 		pm1 &= ~WM8350_BIASEN;
+diff --git a/sound/soc/codecs/wm8900.c b/sound/soc/codecs/wm8900.c
+index c77b49a..fc50456 100644
+--- a/sound/soc/codecs/wm8900.c
++++ b/sound/soc/codecs/wm8900.c
+@@ -1112,7 +1112,7 @@ static int wm8900_set_bias_level(struct snd_soc_codec *codec,
+ 		/* Need to let things settle before stopping the clock
+ 		 * to ensure that restart works, see "Stopping the
+ 		 * master clock" in the datasheet. */
+-		schedule_timeout_interruptible(msecs_to_jiffies(1));
++		schedule_msec_hrtimeout_interruptible((1));
+ 		snd_soc_write(codec, WM8900_REG_POWER2,
+ 			     WM8900_REG_POWER2_SYSCLK_ENA);
+ 		break;
+diff --git a/sound/soc/codecs/wm9713.c b/sound/soc/codecs/wm9713.c
+index e4301dd..bc7b153 100644
+--- a/sound/soc/codecs/wm9713.c
++++ b/sound/soc/codecs/wm9713.c
+@@ -199,7 +199,7 @@ static int wm9713_voice_shutdown(struct snd_soc_dapm_widget *w,
+ 
+ 	/* Gracefully shut down the voice interface. */
+ 	snd_soc_update_bits(codec, AC97_HANDSET_RATE, 0x0f00, 0x0200);
+-	schedule_timeout_interruptible(msecs_to_jiffies(1));
++	schedule_msec_hrtimeout_interruptible((1));
+ 	snd_soc_update_bits(codec, AC97_HANDSET_RATE, 0x0f00, 0x0f00);
+ 	snd_soc_update_bits(codec, AC97_EXTENDED_MID, 0x1000, 0x1000);
+ 
+@@ -868,7 +868,7 @@ static int wm9713_set_pll(struct snd_soc_codec *codec,
+ 	wm9713->pll_in = freq_in;
+ 
+ 	/* wait 10ms AC97 link frames for the link to stabilise */
+-	schedule_timeout_interruptible(msecs_to_jiffies(10));
++	schedule_msec_hrtimeout_interruptible((10));
+ 	return 0;
+ }
+ 
+-- 
+2.7.4
+
