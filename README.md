@@ -31,10 +31,10 @@ COMPRESSXZ=(xz -c -z - --threads=0)
 * Clone repository, build packages and install:
 
 ```
-git clone https://github.com/FadeMind/linux49-muqss.src.git
+git clone https://github.com/FadeMind/linux49-custom.src.git
 ## main kernel packages
 export LANG=C;mkdir -p /tmp/makepkg
-cd linux49-muqss.src/linux49
+cd linux49-custom.src/linux49
 BUILDDIR=/tmp/makepkg makepkg -srci
 ## bbswitch module
 cd ../linux49-bbswitch
@@ -61,6 +61,7 @@ BUILDDIR=/tmp/makepkg makepkg -srci
 * **`[Config] NUMA is disabled in default`**
 * **`[Config] BFQ is default I/O scheduler`**
 * **`[Config] MuQSS is default CPU scheduler`**
+* **`PKGBUILD designed only for x86_64`**
 
 ## LICENSE
 
