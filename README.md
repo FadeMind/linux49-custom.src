@@ -51,12 +51,6 @@ BUILDDIR=/tmp/makepkg makepkg -srci
 
 <hr/>
 
-|**REFERENCES**                                                                                                                |
-:-------------------------------------------------------------------------------------------------------------------------------
-|+ **[Main Official Manjaro Forum Thread](https://forum.manjaro.org/t/linux49-muqss-mnative-exfat-reiser4-kernel-hacking)**    |
-|+ **[Manjaro Forum Thread 4.9 LTS Announcement](https://forum.manjaro.org/t/linux-4-9-is-a-longterm-kernel-until-jan-2019)**  |
-|+ **[linux49-muqss.src: tree](https://github.com/FadeMind/linux49-muqss.src/blob/master/TREE)**                               |
-
 ## CUSTOMS
 
 * **`[Patch] Con Kolivas Patchset`**
@@ -71,7 +65,7 @@ BUILDDIR=/tmp/makepkg makepkg -srci
 ### INCLUDED PATCHES DETAILS
 
 | NAME                                                        | REPOSITORY/CODE/HOMEPAGE                                                                         |                                                                               |
-:-------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
 | Con Kolivas Patchset                                        | [link](http://ck.kolivas.org/patches/4.0/4.9/4.9-ck1/patches/)                                   |
 | AUFS4 Support                                               | [link](http://aufs.sourceforge.net/)                                                             |
 | Reiser4 Support                                             | [link](https://reiser4.wiki.kernel.org/index.php/Main_Page)                                      |
