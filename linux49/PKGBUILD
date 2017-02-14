@@ -167,7 +167,8 @@ build() {
 package_linux49() {
     pkgdesc="The ${pkgbase/linux/Linux} kernel and modules"
     depends=('coreutils' 'linux-firmware' 'kmod' 'mkinitcpio>=0.7')
-    optdepends=('crda: to set the correct wireless channels of your country')
+    optdepends=('crda: to set the correct wireless channels of your country'
+                'reiser4progs: Reiser4 filesystem programs')
     provides=("linux=${pkgver}")
     install=${pkgname}.install
 
