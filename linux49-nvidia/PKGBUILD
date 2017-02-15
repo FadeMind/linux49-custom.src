@@ -9,8 +9,8 @@ _linuxprefix=linux49
 _extramodules=extramodules-4.9-MANJARO
 pkgname=$_linuxprefix-nvidia
 _pkgname=nvidia
-pkgver=375.26
-pkgrel=8
+pkgver=375.39
+pkgrel=1
 epoch=1
 provides=("$_pkgname=$pkgver")
 groups=("$_linuxprefix-extramodules")
@@ -25,8 +25,8 @@ install=nvidia.install
 options=(!strip)
 durl="http://us.download.nvidia.com/XFree86/Linux-x86"
 source=("${durl}_64/${pkgver}/NVIDIA-Linux-x86_64-${pkgver}-no-compat32.run" '0001-GCC-Ofast.patch')
-sha512sums=('f52f6597daa1eaf4cbd934d785da6028ef23ecef98e14746143e3738504f8d65b73788abbcf9fd812317fc2c53cdf1c4d4839de57fafdea1930a08c6b21f1992'
-            'd8cf0f99b0a6fbac39fc38eab3754788560ae5a9add891cb5e1fb4e5a1832350abab32f9ebf00f37032aba510cd0a1e8884dd26c4ba4f51f558033c733554981')
+sha512sums=('0819a6da24574695621bf7baaca351dbc4662b56fcd3e830a3323e1760aee13e1516b657b0d6253602f3ebe70572e3f0c2439fbe7de197256221def09f301577'
+            '258b31dc1086a9e8ac9eaa299f0bacd79701f6e9b9bb324d63077d3b79337ccab91b98b322da5b971954905e6fe210bf13acd0681a450f6aafcd89a443c051b3')
 
 _pkg="NVIDIA-Linux-x86_64-${pkgver}-no-compat32"
 
