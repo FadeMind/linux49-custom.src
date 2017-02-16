@@ -86,10 +86,10 @@ prepare() {
 
     ### add aufs4 support
     msg2 "Add AUFS4 support"
-    	for p in $(ls ${srcdir}/aufs-00{01,02,03,04,05,06,07,08}-*.patch); do
-		patch -Np1 -i ${p}
-	done
-    
+        for p in $(ls ${srcdir}/aufs-00{01,02,03,04,05,06,07,08}-*.patch); do
+        patch -Np1 -i ${p}
+    done
+
     ### Add reiser4 support
     msg2 "Add reiser4 support"
     patch -Np1 -i "${srcdir}/fs-20170126-reiser4-support.patch"
@@ -97,16 +97,16 @@ prepare() {
     ### Add exFAT support
     msg2 "Add exFAT support"
     patch -Np1 -i "${srcdir}/fs-20170115-exfat-support.patch"
-    
+
     ### ZEN: Add a CONFIG option that sets -O3
     msg2 "ZEN: Add a CONFIG option that sets -O3"
     patch -Np1 -i "${srcdir}/init-20161003-Add-a-CONFIG-option-that-sets--O3.patch"
 
     ### Add CK Patchset
     msg2 "Add CK Patchset"
-	for p in $(ls ${srcdir}/ck-00{01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18}-*.patch); do
-		patch -Np1 -i ${p}
-	done
+    for p in $(ls ${srcdir}/ck-00{01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18}-*.patch); do
+        patch -Np1 -i ${p}
+    done
 
     ### Patch source to enable more gcc CPU optimizatons via the make nconfig
     # https://github.com/graysky2/kernel_gcc_patch
@@ -332,7 +332,7 @@ package_linux49-headers() {
 
 sha512sums=('bf67ff812cc3cb7e5059e82cc5db0d9a7c5637f7ed9a42e4730c715bf7047c81ed3a571225f92a33ef0b6d65f35595bc32d773356646df2627da55e9bc7f1f1a'
             '93958f4b932a46bbd9a122f52bf09b8c4b864b419a0774514baeb7dc83f11f55a5ba84f2e586a904dbfeeb7d976352e40670fbe2e32e25c35085ddf87e41b58d'
-            'ef69d4c7a8683afafbcca19f44a139956f036750122dd51dd5e069cddf1fa1cd8c902bb51c0d36cad818271de0923f462bfcffbc602027a90c241a4dbf43954d'
+            '90d2592b4548756045b10ba6feefe0012d9838a0d0960d8c219ca714bd9844ab3414154b17f67c32982dde87c938eea20940e8188582c74c75a2e96f9bb3cc1f'
             'b46812fc02ea68023a99705c79e3f8e21aa48816ef2bc05daee772a449e04964fb09c0347804db3b99c167edfe8ab12d595c739bbda5352dda01b98969e67898'
             '471475b2a67cc23ac5b0495e96d1eddab7cab1cbc5734d8b528cbe5d90cb084d8b017c89e0d8cc62e2babc19c5706b7c9cef1c0d8b9522aea053e4a2a559909e'
             '0e44dc97a15cb8de1722fae5eda79994101bedb55079ce81d7caa6db52e5613cb555e0b0289e953659c29f65ab635e4e33b51973217313335dc442cc8e63e295'
