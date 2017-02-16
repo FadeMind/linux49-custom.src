@@ -14,7 +14,7 @@ _kernelname=-MANJARO
 _basekernel=4.9
 _basever=49
 _aufs=20161219
-pkgver=${_basekernel}.9
+pkgver=${_basekernel}.10
 pkgrel=1
 arch=('x86_64')
 url="http://www.kernel.org/"
@@ -34,14 +34,14 @@ source=("https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-${_basekernel}.tar.x
         ### MANJARO Patches
 
         ### AUFS4
-        "aufs4.9-${_aufs}.patch"
-        'aufs4-base.patch'
-        'aufs4-kbuild.patch'
-        'aufs4-loopback.patch'
-        'aufs4-mmap.patch'
-        'aufs4-standalone.patch'
-        'tmpfs-idr.patch'
-        'vfs-ino.patch'
+        "aufs-0001-aufs4.9-${_aufs}.patch"
+        "aufs-0002-aufs4-base.patch"
+        "aufs-0003-aufs4-kbuild.patch"
+        "aufs-0004-aufs4-loopback.patch"
+        "aufs-0005-aufs4-mmap.patch"
+        "aufs-0006-aufs4-standalone.patch"
+        "aufs-0007-tmpfs-idr.patch"
+        "aufs-0008-vfs-ino.patch"
         ### reiser4
         'fs-20170126-reiser4-support.patch'
         ### exFAT
@@ -86,14 +86,9 @@ prepare() {
 
     ### add aufs4 support
     msg2 "Add AUFS4 support"
-    patch -Np1 -i "${srcdir}/aufs4.9-${_aufs}.patch"
-    patch -Np1 -i "${srcdir}/aufs4-base.patch"
-    patch -Np1 -i "${srcdir}/aufs4-kbuild.patch"
-    patch -Np1 -i "${srcdir}/aufs4-loopback.patch"
-    patch -Np1 -i "${srcdir}/aufs4-mmap.patch"
-    patch -Np1 -i "${srcdir}/aufs4-standalone.patch"
-    patch -Np1 -i "${srcdir}/tmpfs-idr.patch"
-    patch -Np1 -i "${srcdir}/vfs-ino.patch"
+    	for p in $(ls ${srcdir}/aufs-00{01,02,03,04,05,06,07,08}-*.patch); do
+		patch -Np1 -i ${p}
+	done
     
     ### Add reiser4 support
     msg2 "Add reiser4 support"
@@ -109,24 +104,9 @@ prepare() {
 
     ### Add CK Patchset
     msg2 "Add CK Patchset"
-    patch -Np1 -i "${srcdir}/ck-0001-Multiple-Queue-Skiplist-Scheduler-version-0.15.patch"
-    patch -Np1 -i "${srcdir}/ck-0002-Make-preemptible-kernel-default.patch"
-    patch -Np1 -i "${srcdir}/ck-0003-Expose-vmsplit-option-for-our-poor-32bit-users.patch"
-    patch -Np1 -i "${srcdir}/ck-0004-Implement-min-and-msec-hrtimeout-un-interruptible-sc.patch"
-    patch -Np1 -i "${srcdir}/ck-0005-Special-case-calls-of-schedule_timeout-1-to-use-the-.patch"
-    patch -Np1 -i "${srcdir}/ck-0006-Convert-msleep-to-use-hrtimers-when-active.patch"
-    patch -Np1 -i "${srcdir}/ck-0007-Replace-all-schedule_timeout-1-with-schedule_min_hrt.patch"
-    patch -Np1 -i "${srcdir}/ck-0008-Change-all-schedule_timeout-with-msecs_to_jiffies-po.patch"
-    patch -Np1 -i "${srcdir}/ck-0009-Replace-all-calls-to-schedule_timeout_interruptible-.patch"
-    patch -Np1 -i "${srcdir}/ck-0010-Replace-all-calls-to-schedule_timeout_uninterruptibl.patch"
-    patch -Np1 -i "${srcdir}/ck-0011-Fix-build-for-disabled-highres-timers-with-hrtimeout.patch"
-    patch -Np1 -i "${srcdir}/ck-0012-Make-hrtimer-granularity-and-minimum-hrtimeout-confi.patch"
-    patch -Np1 -i "${srcdir}/ck-0013-Make-threaded-IRQs-optionally-the-default-which-can-.patch"
-    patch -Np1 -i "${srcdir}/ck-0014-Reinstate-default-Hz-of-100-in-combination-with-MuQS.patch"
-    patch -Np1 -i "${srcdir}/ck-0015-Don-t-use-hrtimer-overlay-when-pm_freezing-since-som.patch"
-    patch -Np1 -i "${srcdir}/ck-0016-wb-buf-throttle-v7.patch"
-    patch -Np1 -i "${srcdir}/ck-0017-4.9-bfq-v8.patch"
-    patch -Np1 -i "${srcdir}/ck-0018-Make-writeback-throttling-default-enabled.patch"
+	for p in $(ls ${srcdir}/ck-00{01,02,03,04,05,06,07,08,09,10,11,12,13,14,15,16,17,18}-*.patch); do
+		patch -Np1 -i ${p}
+	done
 
     ### Patch source to enable more gcc CPU optimizatons via the make nconfig
     # https://github.com/graysky2/kernel_gcc_patch
@@ -351,7 +331,7 @@ package_linux49-headers() {
 }
 
 sha512sums=('bf67ff812cc3cb7e5059e82cc5db0d9a7c5637f7ed9a42e4730c715bf7047c81ed3a571225f92a33ef0b6d65f35595bc32d773356646df2627da55e9bc7f1f1a'
-            'a7a2d44b83b00b20f1424d12af0f42e1c576d3053feacd13491ef185661fb1c789b9265c500b62f5ede39f57b72f358820000fa6c852a5f035e566ee1dfcd5d9'
+            '93958f4b932a46bbd9a122f52bf09b8c4b864b419a0774514baeb7dc83f11f55a5ba84f2e586a904dbfeeb7d976352e40670fbe2e32e25c35085ddf87e41b58d'
             'ef69d4c7a8683afafbcca19f44a139956f036750122dd51dd5e069cddf1fa1cd8c902bb51c0d36cad818271de0923f462bfcffbc602027a90c241a4dbf43954d'
             'b46812fc02ea68023a99705c79e3f8e21aa48816ef2bc05daee772a449e04964fb09c0347804db3b99c167edfe8ab12d595c739bbda5352dda01b98969e67898'
             '471475b2a67cc23ac5b0495e96d1eddab7cab1cbc5734d8b528cbe5d90cb084d8b017c89e0d8cc62e2babc19c5706b7c9cef1c0d8b9522aea053e4a2a559909e'

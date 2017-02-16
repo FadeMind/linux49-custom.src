@@ -4,12 +4,14 @@
 │   └── PKGBUILD
 ├── LICENSE
 ├── linux49
-│   ├── aufs4.9-20161219.patch
-│   ├── aufs4-base.patch
-│   ├── aufs4-kbuild.patch
-│   ├── aufs4-loopback.patch
-│   ├── aufs4-mmap.patch
-│   ├── aufs4-standalone.patch
+│   ├── aufs-0001-aufs4.9-20161219.patch
+│   ├── aufs-0002-aufs4-base.patch
+│   ├── aufs-0003-aufs4-kbuild.patch
+│   ├── aufs-0004-aufs4-loopback.patch
+│   ├── aufs-0005-aufs4-mmap.patch
+│   ├── aufs-0006-aufs4-standalone.patch
+│   ├── aufs-0007-tmpfs-idr.patch
+│   ├── aufs-0008-vfs-ino.patch
 │   ├── change-default-console-loglevel.patch
 │   ├── ck-0001-Multiple-Queue-Skiplist-Scheduler-version-0.15.patch
 │   ├── ck-0002-Make-preemptible-kernel-default.patch
@@ -38,9 +40,7 @@
 │   ├── linux49.hook
 │   ├── linux49.install
 │   ├── linux49.preset
-│   ├── PKGBUILD
-│   ├── tmpfs-idr.patch
-│   └── vfs-ino.patch
+│   └── PKGBUILD
 ├── linux49-bbswitch
 │   ├── bbswitch.install
 │   └── PKGBUILD
