@@ -26,7 +26,7 @@ options=(!strip)
 durl="http://us.download.nvidia.com/XFree86/Linux-x86"
 source=("${durl}_64/${pkgver}/NVIDIA-Linux-x86_64-${pkgver}-no-compat32.run" '0001-GCC-Ofast.patch')
 sha512sums=('0819a6da24574695621bf7baaca351dbc4662b56fcd3e830a3323e1760aee13e1516b657b0d6253602f3ebe70572e3f0c2439fbe7de197256221def09f301577'
-            '258b31dc1086a9e8ac9eaa299f0bacd79701f6e9b9bb324d63077d3b79337ccab91b98b322da5b971954905e6fe210bf13acd0681a450f6aafcd89a443c051b3')
+            'c56566e80d1c601ee5d105efd9fd11e0d2f05bc986a3203f94b050c408ea8c916db24ac8128d8006ebc14b7e801ec472865911615bdfc7c5d150a89e58b5c090')
 
 _pkg="NVIDIA-Linux-x86_64-${pkgver}-no-compat32"
 

@@ -1,0 +1,69 @@
+# Maintainer: Sven-Hendrik Haase <sh@lutzhaase.com>
+# Maintainer: Roland Singer <roland@manjaro.org>
+# Maintainer: Philip Mueller <philm@manjaro.org>
+# Maintainer: FadeMind < fademind@gmail.com>
+
+### NOTE ### Forked sources have merged ALL major fixes from develop branch (https://github.com/Bumblebee-Project/Bumblebee/commits/develop)
+### Reference: https://forum.manjaro.org/t/bumblebee-not-switching-back-to-igpu-after-quitting-optirun/1054/12?u=fademind
+
+_commit=029ddaca064756c0a54bc67a9d5e1ed9d0aeb676 # lastest commit from 20170217
+pkgname=bumblebee
+pkgver=3.2.1
+pkgrel=16
+pkgdesc="NVIDIA Optimus support for Linux through Primus/VirtualGL"
+arch=('i686' 'x86_64')
+depends=('kmod' 'primus' 'glib2' 'mesa-libgl')
+makedepends=('help2man')
+optdepends=('xf86-video-nouveau: nouveau driver'
+            'nouveau-dri: 3D acceleration features fo nouveau'
+            'bbswitch: switch on/off discrete card' 
+            'nvidia: NVIDIA kernel driver'
+            'virtualgl: alternative back-end for optirun')
+optdepends_x86_64=('lib32-virtualgl: run 32bit applications with optirun'
+                   'lib32-primus: faster back-end for optirun')
+
+url="http://www.bumblebee-project.org"
+license=("GPL3")
+backup=('etc/bumblebee/bumblebee.conf' 
+        'etc/bumblebee/xorg.conf.nouveau' 
+        'etc/bumblebee/xorg.conf.nvidia')
+install='bumblebee.install'
+source=("${pkgname}.zip::https://github.com/FadeMind/Bumblebee/archive/${_commit}.zip")
+sha256sums=('709aabd1aff041e0b89cacc5a47083326f6c5ce22644e75d9a7ebfdd35c80fe2')
+
+build() {
+    export CFLAGS="-Ofast -march=native -pthread -funroll-loops -ftracer"
+    export CXXFLAGS="-Ofast -march=native -pthread -funroll-loops -ftracer"
+    
+    cd "${srcdir}/Bumblebee-${_commit}"
+    autoreconf -fi
+    ./configure \
+        CONF_DRIVER_MODULE_NVIDIA=nvidia \
+        CONF_LDPATH_NVIDIA=/usr/lib/nvidia:/usr/lib32/nvidia \
+        CONF_MODPATH_NVIDIA=/usr/lib/nvidia/xorg/,/usr/lib/xorg/modules \
+        --prefix=/usr \
+        --sbindir=/usr/bin \
+        --with-udev-rules=/usr/lib/udev/rules.d/ \
+        --sysconfdir=/etc \
+        --without-pidfile
+
+    make
+}
+
+package() {
+    cd "${srcdir}/Bumblebee-${_commit}"
+    
+    # Install main app
+    make install DESTDIR="$pkgdir"
+    
+    # Install systemd unit
+    install -Dm644 "scripts/systemd/bumblebeed.service" "${pkgdir}/usr/lib/systemd/system/bumblebeed.service"    
+    sed -i "s/sbin/bin/" "${pkgdir}/usr/lib/systemd/system/bumblebeed.service"
+    
+    # Install udev rule to prevent GH-#144
+    install -Dm644 "conf/99-bumblebee-nvidia-dev.rules" "${pkgdir}/usr/lib/udev/rules.d/99-bumblebee-nvidia-dev.rules"
+    
+    # Stop nvidia from loading on boot
+    mkdir -p "${pkgdir}/etc/modprobe.d"
+    echo "remove nvidia modprobe -r --ignore-remove nvidia-drm nvidia-modeset nvidia-uvm nvidia" > "${pkgdir}/etc/modprobe.d/bumblebee.conf"
+}

@@ -1,0 +1,10 @@
+--- a/Makefile	2013-12-05 00:22:06.000000000 +0100
++++ b/Makefile	2017-02-19 21:22:14.607260890 +0100
+@@ -4,6 +4,7 @@ obj-m := $(modname).o
+ KVERSION := $(shell uname -r)
+ KDIR := /lib/modules/$(KVERSION)/build
+ PWD := "$$(pwd)"
++CFLAGS_$(obj-m) := -Ofast -march=native -pthread -funroll-loops -ftracer
+ 
+ ifdef DEBUG
+ CFLAGS_$(obj-m) := -DDEBUG

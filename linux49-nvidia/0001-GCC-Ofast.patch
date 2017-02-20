@@ -6,7 +6,7 @@ diff -U 3 -H -d -r -N -- a/Kbuild b/Kbuild
  EXTRA_CFLAGS += -I$(src)
  EXTRA_CFLAGS += -Wall -MD $(DEFINES) $(INCLUDES) -Wsign-compare -Wno-cast-qual -Wno-error
 -EXTRA_CFLAGS += -D__KERNEL__ -DMODULE -DNVRM -DNV_VERSION_STRING=\"375.39\" -Wno-unused-function -Wuninitialized -fno-strict-aliasing -mno-red-zone -mcmodel=kernel -DNV_UVM_ENABLE -Wno-sign-compare -Wno-format-extra-args
-+EXTRA_CFLAGS += -D__KERNEL__ -DMODULE -DNVRM -DNV_VERSION_STRING=\"375.39\" -Ofast -march=native -Wno-unused-function -Wuninitialized -fno-strict-aliasing -mno-red-zone -mcmodel=kernel -DNV_UVM_ENABLE -Wno-sign-compare -Wno-format-extra-args
++EXTRA_CFLAGS += -D__KERNEL__ -DMODULE -DNVRM -DNV_VERSION_STRING=\"375.39\" -Ofast -march=native -pthread -funroll-loops -ftracer -Wno-unused-function -Wuninitialized -fno-strict-aliasing -mno-red-zone -mcmodel=kernel -DNV_UVM_ENABLE -Wno-sign-compare -Wno-format-extra-args
  
  #
  # Detect SGI UV systems and apply system-specific optimizations.
@@ -18,7 +18,7 @@ diff -U 3 -H -d -r -N -- a/conftest.sh b/conftest.sh
  
  build_cflags() {
 -    BASE_CFLAGS="-O2 -D__KERNEL__ \
-+    BASE_CFLAGS="-Ofast -march=native -D__KERNEL__ \
++    BASE_CFLAGS="-Ofast -march=native -pthread -funroll-loops -ftracer -D__KERNEL__ \
  -DKBUILD_BASENAME=\"#conftest$$\" -DKBUILD_MODNAME=\"#conftest$$\" \
  -nostdinc -isystem $ISYSTEM"
  

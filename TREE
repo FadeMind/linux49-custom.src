@@ -1,5 +1,11 @@
 .
+├── bumblebee
+│   ├── bumblebee.install
+│   └── PKGBUILD
 ├── CLEANUP
+├── lib32-primus
+│   ├── PKGBUILD
+│   └── register_cleanup.patch
 ├── libaal
 │   └── PKGBUILD
 ├── LICENSE
@@ -42,6 +48,7 @@
 │   ├── linux49.preset
 │   └── PKGBUILD
 ├── linux49-bbswitch
+│   ├── 0001-flags.patch
 │   ├── bbswitch.install
 │   └── PKGBUILD
 ├── linux49-nvidia
@@ -52,9 +59,12 @@
 │   ├── kernel-47.patch
 │   ├── PKGBUILD
 │   └── r8168.install
+├── primus
+│   ├── PKGBUILD
+│   └── register_cleanup.patch
 ├── README.md
 ├── reiser4progs
 │   └── PKGBUILD
 └── TREE
 
-6 directories, 51 files
+9 directories, 58 files
